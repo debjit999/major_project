@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+        <h1 class="text-2xl font-bold text-secondary-800 flex items-center">
+            <i class="fas fa-trophy mr-3 text-yellow-500"></i> QuizMaster Leaderboard
+        </h1>
+        <p class="text-secondary-600 mt-1">See how you compare with other players</p>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-secondary-200">
+                <thead class="bg-secondary-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                            Rank
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                            Player
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                            Quiz
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                            Score
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                            Percentage
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
+                            Date
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-secondary-200">
+                    {% for result in leaderboard_data %}
+                    <tr class="{% if result[0] == current_user %}bg-primary-50{% endif %} hover:bg-secondary-50 transition-all">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-secondary-900">
+                            {{ loop.index }}
+                            {% if loop.index == 1 %}
+                                <i class="fas fa-crown text-yellow-500 ml-1"></i>
+                            {% elif loop.index <= 3 %}
+                                <i class="fas fa-medal text-yellow-400 ml-1"></i>
+                            {% elif loop.index <= 5 %}
+                                <i class="fas fa-medal text-gray-400 ml-1"></i>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
+                            {{ result[0] }}
+                            {% if result[0] == current_user %}
+                                <span class="ml-2 px-2 py-1 text-xs rounded-full bg-primary-100 text-primary-800">You</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
+                            {{ quiz_data[result[1]]['title'] }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
+                            {{ result[2] }}/{{ result[3] }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
+                            <span class="px-2 py-1 rounded-full 
+                                {% if result[4] >= 90 %}bg-green-100 text-green-800
+                                {% elif result[4] >= 70 %}bg-blue-100 text-blue-800
+                                {% elif result[4] >= 50 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ "%.1f"|format(result[4]) }}%
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-secondary-500">
+                            {{ result[5].strftime('%b %d, %Y') }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-sm text-secondary-500">
+                            No results found. Be the first to take a quiz!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Personal bests -->
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold text-secondary-800 mb-4 flex items-center">
+            <i class="fas fa-award mr-2 text-primary-600"></i> Your Personal Bests
+        </h2>
+        
+        {% if user_best_scores %}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% for quiz_id, quiz in quiz_data.items() %}
+            <div class="border border-secondary-200 rounded-lg p-4 {% if quiz_id in user_best_scores %}bg-gradient-to-br from-white to-primary-50{% else %}bg-secondary-50{% endif %}">
+                <div class="flex items-center mb-2">
+                    {% if quiz_id == 1 %}
+                        <i class="fab fa-python text-2xl mr-3 text-blue-500"></i>
+                    {% elif quiz_id == 2 %}
+                        <i class="fab fa-java text-2xl mr-3 text-red-500"></i>
+                    {% else %}
+                        <i class="fas fa-network-wired text-2xl mr-3 text-green-500"></i>
+                    {% endif %}
+                    <h3 class="font-bold text-secondary-800">{{ quiz.title }}</h3>
+                </div>
+                
+                {% if quiz_id in user_best_scores %}
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-2xl font-bold text-primary-600">
+                            {{ "%.1f"|format(user_best_scores[quiz_id]['percentage']) }}%
+                        </span>
+                        <span class="text-sm text-secondary-600 ml-1">
+                            ({{ user_best_scores[quiz_id]['score'] }}/{{ quiz.questions|length }})
+                        </span>
+                    </div>
+                    <a href="{{ url_for('quiz', quiz_id=quiz_id) }}" 
+                       class="px-3 py-1 bg-primary-600 text-white text-sm rounded hover:bg-primary-700 transition-all">
+                        Retake
+                    </a>
+                </div>
+                {% else %}
+                <p class="text-sm text-secondary-600 mb-2">Not attempted yet</p>
+                <a href="{{ url_for('quiz', quiz_id=quiz_id) }}" 
+                   class="px-3 py-1 bg-primary-600 text-white text-sm rounded hover:bg-primary-700 transition-all inline-block">
+                    Take Quiz
+                </a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-secondary-600">You haven't taken any quizzes yet. Get started now!</p>
+        <div class="mt-4">
+            <a href="{{ url_for('index') }}" class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-all">
+                Browse Quizzes
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
